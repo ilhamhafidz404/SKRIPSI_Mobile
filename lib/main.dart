@@ -1,36 +1,26 @@
+import 'package:certipath_app/features/main_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'core/theme.dart';
-import 'core/router.dart';
+import 'features/auth/presentation/login_page.dart';
+import 'features/auth/application/auth_provider.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Status bar transparan agar background tembus
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ),
-  );
-
-  runApp(const ProviderScope(child: CertiPathApp()));
+  runApp(const ProviderScope(child: MyApp()));
 }
 
-class CertiPathApp extends ConsumerWidget {
-  const CertiPathApp({super.key});
+class MyApp extends ConsumerWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(routerProvider);
+    final authState = ref.watch(authProvider);
 
-    return MaterialApp.router(
-      title: 'CertiPath — Redline Apparel',
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      routerConfig: router,
+      home: authState.status == AuthStatus.authenticated
+          ? const MainPage()
+          : const LoginPage(),
     );
   }
 }

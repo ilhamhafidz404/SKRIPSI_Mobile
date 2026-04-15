@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../../core/theme.dart';
 import 'google_signin_button.dart';
 
-class LoginCard extends ConsumerWidget {
-  const LoginCard({super.key, required this.isLoading});
+class LoginCard extends StatelessWidget {
+  const LoginCard({
+    super.key,
+    required this.isLoading,
+    required this.onGoogleSignIn,
+  });
 
   final bool isLoading;
+  final VoidCallback onGoogleSignIn;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Container(
       constraints: const BoxConstraints(maxWidth: 400),
       padding: const EdgeInsets.fromLTRB(36, 36, 36, 32),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             'REDLINE APPAREL',
@@ -46,7 +51,7 @@ class LoginCard extends ConsumerWidget {
 
           const SizedBox(height: 28),
 
-          GoogleSignInButton(isLoading: isLoading),
+          GoogleSignInButton(isLoading: isLoading, onPressed: onGoogleSignIn),
         ],
       ),
     );

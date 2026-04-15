@@ -1,8 +1,8 @@
 import 'package:certipath_app/features/auth/application/auth_provider.dart';
 import 'package:certipath_app/features/auth/presentation/login_page.dart';
+import 'package:certipath_app/features/home/presentation/home_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../pages/home_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);

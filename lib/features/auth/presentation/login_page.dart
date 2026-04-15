@@ -14,6 +14,7 @@ class LoginPage extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final isLoading = authState.status == AuthStatus.loading;
 
+    /// Listen error state
     ref.listen<AuthState>(authProvider, (_, next) {
       if (next.status == AuthStatus.error) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -22,6 +23,14 @@ class LoginPage extends ConsumerWidget {
             backgroundColor: AppColors.primary,
           ),
         );
+      }
+
+      /// OPTIONAL: kalau login sukses, bisa trigger navigation global
+      if (next.status == AuthStatus.authenticated) {
+        // contoh kalau kamu masih pakai Navigator manual:
+        // Navigator.pushReplacement(...);
+
+        // atau kalau pakai AuthGate → tidak perlu apa-apa
       }
     });
 
@@ -46,7 +55,12 @@ class LoginPage extends ConsumerWidget {
             child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
-                child: LoginCard(isLoading: isLoading),
+                child: LoginCard(
+                  isLoading: isLoading,
+                  onGoogleSignIn: () {
+                    ref.read(authProvider.notifier).signInWithGoogle();
+                  },
+                ),
               ),
             ),
           ),
