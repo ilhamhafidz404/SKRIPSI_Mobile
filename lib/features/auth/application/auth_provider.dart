@@ -1,4 +1,5 @@
 import 'package:certipath_app/core/api_service.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -58,8 +59,6 @@ class AuthState {
   );
 }
 
-// ── Notifier ──────────────────────────────────────────────────────────────────
-
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(const AuthState()) {
     _checkExistingSession();
@@ -68,7 +67,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
   final _api = ApiService();
 
-  // Cek apakah sudah punya token tersimpan
   Future<void> _checkExistingSession() async {
     final loggedIn = await _api.isLoggedIn();
     state = state.copyWith(
@@ -76,23 +74,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
+  // ✅ Helper untuk extract error dari Dio
+  String _extractErrorMessage(dynamic error) {
+    if (error is DioException) {
+      if (error.response != null) {
+        final data = error.response?.data;
+
+        if (data is Map<String, dynamic>) {
+          return data['error'] ??
+              data['message'] ??
+              'Terjadi kesalahan pada server';
+        }
+      }
+      return error.message ?? 'Koneksi bermasalah';
+    }
+
+    return error.toString();
+  }
+
   // ── Google Sign-In ──────────────────────────────────────────────────────────
   Future<void> signInWithGoogle() async {
     state = state.copyWith(status: AuthStatus.loading);
 
     try {
-      // 1. Trigger Google popup
       final googleUser = await _googleSignIn.signIn();
+
       if (googleUser == null) {
-        // User cancel
         state = state.copyWith(status: AuthStatus.unauthenticated);
         return;
       }
 
-      // 2. Ambil auth tokens dari Google
       final googleAuth = await googleUser.authentication;
 
-      // 3. Kirim ke backend Go
       final response = await _api.googleLogin(
         googleId: googleUser.id,
         email: googleUser.email,
@@ -101,23 +114,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
         accessToken: googleAuth.accessToken ?? '',
       );
 
-      // 4. Simpan JWT
       final token = response['token'] as String;
       await _api.saveToken(token);
 
-      // 5. Set state
       final user = AuthUser.fromJson(
         response['user'] as Map<String, dynamic>,
         token,
       );
 
-      state = state.copyWith(status: AuthStatus.authenticated, user: user);
-    } catch (e) {
-      print("ERROR GOOGLE LOGIN: $e"); // 👈 penting
       state = state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
+        status: AuthStatus.authenticated,
+        user: user,
+        errorMessage: null,
       );
+    } catch (e) {
+      final message = _extractErrorMessage(e);
+
+      print("ERROR GOOGLE LOGIN: $message");
+
+      state = state.copyWith(status: AuthStatus.error, errorMessage: message);
     }
   }
 
@@ -128,7 +143,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 }
-
 // ── Providers ─────────────────────────────────────────────────────────────────
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
