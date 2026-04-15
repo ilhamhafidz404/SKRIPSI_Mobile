@@ -1,8 +1,6 @@
-name: certipath
-description: "A new Flutter project."
-# The following line prevents the package from being accidentally published to
-# pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+name: certipath_app
+description: Redline Apparel - CertiPath Product Authentication App
+publish_to: 'none'
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -30,6 +28,24 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # Google Sign-In
+  google_sign_in: ^6.2.1
+ 
+  # HTTP client
+  dio: ^5.4.3+1
+ 
+  # State management
+  flutter_riverpod: ^2.5.1
+ 
+  # Secure storage (simpan JWT)
+  flutter_secure_storage: ^9.0.0
+ 
+  # Navigation
+  go_router: ^13.2.0
+ 
+  # UI
+  google_fonts: ^6.2.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
