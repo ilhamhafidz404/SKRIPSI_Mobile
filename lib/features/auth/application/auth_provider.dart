@@ -59,6 +59,8 @@ class AuthState {
   );
 }
 
+// ── Notifier ──────────────────────────────────────────────────────────────────
+
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(const AuthState()) {
     _checkExistingSession();
@@ -68,18 +70,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final _api = ApiService();
 
   Future<void> _checkExistingSession() async {
-    final loggedIn = await _api.isLoggedIn();
-    state = state.copyWith(
-      status: loggedIn ? AuthStatus.authenticated : AuthStatus.unauthenticated,
-    );
+    // Hapus token lama setiap buka app — paksa login ulang
+    await _api.clearToken();
+    state = state.copyWith(status: AuthStatus.unauthenticated);
   }
 
-  // ✅ Helper untuk extract error dari Dio
   String _extractErrorMessage(dynamic error) {
     if (error is DioException) {
       if (error.response != null) {
         final data = error.response?.data;
-
         if (data is Map<String, dynamic>) {
           return data['error'] ??
               data['message'] ??
@@ -88,11 +87,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
       return error.message ?? 'Koneksi bermasalah';
     }
-
     return error.toString();
   }
 
   // ── Google Sign-In ──────────────────────────────────────────────────────────
+
   Future<void> signInWithGoogle() async {
     state = state.copyWith(status: AuthStatus.loading);
 
@@ -129,21 +128,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
     } catch (e) {
       final message = _extractErrorMessage(e);
-
-      print("ERROR GOOGLE LOGIN: $message");
-
+      print('ERROR GOOGLE LOGIN: $message');
       state = state.copyWith(status: AuthStatus.error, errorMessage: message);
     }
   }
 
   // ── Sign Out ────────────────────────────────────────────────────────────────
+
   Future<void> signOut() async {
     await _googleSignIn.signOut();
     await _api.clearToken();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 }
-// ── Providers ─────────────────────────────────────────────────────────────────
+
+// ── Provider ──────────────────────────────────────────────────────────────────
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
   (ref) => AuthNotifier(),

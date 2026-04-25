@@ -1,8 +1,8 @@
+import 'package:certipath_app/features/scan/presentation/scan_page.dart';
 import 'package:flutter/material.dart';
 
 import '../../features/home/presentation/home_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
-import '../../features/scan/presentation/scan_dart.dart';
 import '../../../../core/theme.dart';
 
 class MainPage extends StatefulWidget {

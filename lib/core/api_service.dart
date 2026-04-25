@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-const _baseUrl = 'http://10.131.2.246:8080/api';
+const _baseUrl = 'https://certipath-api.alope.id/api';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
