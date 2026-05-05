@@ -131,6 +131,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 collapseMode: CollapseMode.pin,
                 background: HomeProfileCard(
                   userName: user.name,
+                  userAvatar: user.avatar ?? '',
                   bannerMessages: HomeConstants.bannerMessages,
                   bannerController: _bannerController,
                   currentIndex: _currentBannerIndex,
