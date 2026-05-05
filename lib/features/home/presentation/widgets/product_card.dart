@@ -35,7 +35,7 @@ class ProductCard extends StatelessWidget {
       child: Material(
         borderRadius: BorderRadius.circular(10),
         elevation: 5,
-        shadowColor: AppColors.primaryTint.withOpacity(0.4),
+        // shadowColor: AppColors.primaryTint.withOpacity(0.4),
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(

@@ -40,7 +40,6 @@ class _HomePageState extends ConsumerState<HomePage>
     _bannerController = PageController();
     _scrollController = ScrollController();
 
-    // _initializeAnimations();
     _setupScrollListener();
     _startBannerAutoScroll();
   }
@@ -116,22 +115,20 @@ class _HomePageState extends ConsumerState<HomePage>
               elevation: 0,
               centerTitle: true,
               backgroundColor: AppColors.primary,
-
               title: _isCollapsed
                   ? Text(
                       'Certipath',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.lexend(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     )
                   : null,
-
               flexibleSpace: FlexibleSpaceBar(
                 collapseMode: CollapseMode.pin,
                 background: HomeProfileCard(
                   userName: user.name,
-                  userAvatar: user.avatar ?? '',
+                  userAvatar: user.avatar,
                   bannerMessages: HomeConstants.bannerMessages,
                   bannerController: _bannerController,
                   currentIndex: _currentBannerIndex,
@@ -142,21 +139,29 @@ class _HomePageState extends ConsumerState<HomePage>
               ),
             ),
 
-            ProductTitleSection(),
-            ProductGridSection(),
+            const ProductTitleSection(),
+
+            const ProductGridSection(),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 110)),
           ],
         ),
       ),
+
       floatingActionButton: _showScrollToTop
-          ? FloatingActionButton(
-              heroTag: "scroll_top",
-              onPressed: () => _scrollController.animateTo(
-                0,
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.easeInOut,
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 80),
+              child: FloatingActionButton(
+                heroTag: "scroll_top",
+                onPressed: () => _scrollController.animateTo(
+                  0,
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOut,
+                ),
+                backgroundColor: AppColors.primary,
+                elevation: 4,
+                child: const Icon(Icons.arrow_upward, color: Colors.white),
               ),
-              backgroundColor: AppColors.primary,
-              child: const Icon(Icons.arrow_upward, color: Colors.white),
             )
           : null,
     );
