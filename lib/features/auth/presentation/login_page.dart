@@ -21,15 +21,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final isLoading = authState.status == AuthStatus.loading;
 
     return Scaffold(
-      // Mengatur status bar agar tetap putih (light) di atas gambar gelap
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         toolbarHeight: 0,
         elevation: 0,
+        backgroundColor: Colors.transparent,
         systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
       body: Stack(
         children: [
-          // 1. Full Screen Background Image
           Positioned.fill(
             child: Image.network(
               'https://images.unsplash.com/photo-1654676066221-500d63a81951?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // Gambar bertema Blockchain/Tech
@@ -37,12 +37,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ),
           ),
 
-          // 2. Dark Overlay (Untuk memastikan teks & glass tetap kontras)
           Positioned.fill(
             child: Container(color: Colors.black.withOpacity(0.4)),
           ),
 
-          // 3. Main Content
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -50,12 +48,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Branding Header
                     _buildHeroSection(),
 
                     const SizedBox(height: 50),
 
-                    // GLASSMORPHISM CARD
                     ClipRRect(
                       borderRadius: BorderRadius.circular(32),
                       child: BackdropFilter(

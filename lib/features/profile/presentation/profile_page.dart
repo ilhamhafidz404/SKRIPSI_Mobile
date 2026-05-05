@@ -17,7 +17,6 @@ class ProfilePage extends ConsumerWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Background Image (Seirama dengan LoginPage)
           Positioned.fill(
             child: Image.network(
               'https://images.unsplash.com/photo-1654676066221-500d63a81951?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
@@ -25,28 +24,25 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
 
-          // 2. Dark Overlay
           Positioned.fill(
             child: Container(color: Colors.black.withOpacity(0.6)),
           ),
 
-          // 3. Konten Utama
           SafeArea(
             child: Column(
               children: [
-                // Header sederhana dengan tombol kembali
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Row(
                     children: [
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
+                      // IconButton(
+                      //   onPressed: () => Navigator.pop(context),
+                      //   icon: const Icon(
+                      //     Icons.arrow_back_ios_new,
+                      //     color: Colors.white,
+                      //     size: 20,
+                      //   ),
+                      // ),
                       Text(
                         'Account Profile',
                         style: GoogleFonts.inter(
@@ -61,7 +57,6 @@ class ProfilePage extends ConsumerWidget {
 
                 const Spacer(),
 
-                // CARD PROFILE GLASSMORPHISM
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: ClipRRect(
