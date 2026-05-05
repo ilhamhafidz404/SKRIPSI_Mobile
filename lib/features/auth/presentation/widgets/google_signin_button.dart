@@ -1,8 +1,7 @@
-import 'package:certipath_app/features/auth/application/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../../core/theme.dart';
 import 'google_icon.dart';
 
 class GoogleSignInButton extends ConsumerStatefulWidget {
@@ -20,63 +19,65 @@ class GoogleSignInButton extends ConsumerStatefulWidget {
 }
 
 class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
-  bool hovered = false;
+  bool isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     final isDisabled = widget.isLoading;
 
-    return MouseRegion(
-      cursor: isDisabled
-          ? SystemMouseCursors.forbidden
-          : SystemMouseCursors.click,
-      onEnter: (_) {
-        if (!isDisabled) setState(() => hovered = true);
-      },
-      onExit: (_) {
-        if (!isDisabled) setState(() => hovered = false);
-      },
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+    return AnimatedScale(
+      scale: isHovered ? 1.02 : 1.0,
+      duration: const Duration(milliseconds: 200),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => isHovered = true),
+        onExit: (_) => setState(() => isHovered = false),
+        cursor: isDisabled
+            ? SystemMouseCursors.forbidden
+            : SystemMouseCursors.click,
+        child: GestureDetector(
           onTap: isDisabled ? null : widget.onPressed,
-          borderRadius: BorderRadius.circular(6),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            duration: const Duration(milliseconds: 250),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
             decoration: BoxDecoration(
-              color: isDisabled
-                  ? AppColors.parchment.withOpacity(0.5)
-                  : hovered
-                  ? AppColors.parchment
-                  : AppColors.paper,
-              border: Border.all(
-                color: isDisabled
-                    ? AppColors.primaryBorder.withOpacity(0.4)
-                    : AppColors.primaryBorder,
-              ),
-              borderRadius: BorderRadius.circular(6),
+              // Efek Putih Solid yang kontras di atas Glassmorphism
+              color: isDisabled ? Colors.white.withOpacity(0.5) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: isHovered
+                      ? Colors.white.withOpacity(0.4)
+                      : Colors.black.withOpacity(0.1),
+                  blurRadius: isHovered ? 20 : 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (widget.isLoading)
                   const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
+                    ),
                   )
                 else
-                  const GoogleIcon(),
+                  const GoogleIcon(), // Pastikan icon ini berukuran sekitar 20-24
 
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
 
                 Text(
-                  widget.isLoading ? 'SIGNING IN...' : 'CONTINUE WITH GOOGLE',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.5,
-                    color: isDisabled ? Colors.black38 : Colors.black,
+                  widget.isLoading ? 'SIGNING IN...' : 'Continue with Google',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors
+                        .black, // Tetap hitam agar kontras di tombol putih
+                    letterSpacing: -0.2,
                   ),
                 ),
               ],
