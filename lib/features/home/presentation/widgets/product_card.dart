@@ -1,13 +1,9 @@
 import 'package:certipath_app/core/theme.dart';
 import 'package:certipath_app/features/home/data/models/product_model.dart';
-import 'package:certipath_app/features/home/presentation/home_page.dart';
+import 'package:certipath_app/features/home/presentation/product_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-// Import konstanta warna dan model Anda
-// import 'package:certipath/core/theme/app_colors.dart';
-// import 'package:certipath/features/home/data/models/product_model.dart';
-// import 'package:certipath/features/home/presentation/product_detail_page.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
