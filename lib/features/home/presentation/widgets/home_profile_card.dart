@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class HomeProfileCard extends StatefulWidget {
   final String userName;
-  final String userAvatar; // Tambahkan ini
+  final String userAvatar;
   final List<String> bannerMessages;
   final PageController bannerController;
   final int currentIndex;
@@ -13,7 +13,7 @@ class HomeProfileCard extends StatefulWidget {
   const HomeProfileCard({
     super.key,
     required this.userName,
-    required this.userAvatar, // Tambahkan ini
+    required this.userAvatar,
     required this.bannerMessages,
     required this.bannerController,
     required this.currentIndex,
