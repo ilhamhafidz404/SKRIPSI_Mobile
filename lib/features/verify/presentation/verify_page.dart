@@ -1,8 +1,9 @@
+import 'dart:ui';
 import 'package:certipath_app/core/api_service.dart';
-import 'package:certipath_app/core/theme.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class VerifyPage extends StatefulWidget {
   const VerifyPage({super.key, required this.serial});
@@ -14,15 +15,35 @@ class VerifyPage extends StatefulWidget {
 
 class _VerifyPageState extends State<VerifyPage> {
   final _api = ApiService();
+  final ScrollController _scrollController = ScrollController();
 
   bool _isLoading = true;
   String? _error;
   Map<String, dynamic>? _result;
+  double _headerOpacity = 0.0;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  // Logic untuk mengatur transparansi teks di AppBar saat scroll
+  void _onScroll() {
+    double offset = _scrollController.offset;
+    double newOpacity = (offset / 100).clamp(0.0, 1.0);
+    if (newOpacity != _headerOpacity) {
+      setState(() {
+        _headerOpacity = newOpacity;
+      });
+    }
   }
 
   Future<void> _load() async {
@@ -37,11 +58,11 @@ class _VerifyPageState extends State<VerifyPage> {
       });
     } on DioException catch (e) {
       setState(() {
-        _error = (e.response?.data as Map?)?['message'] ?? 'Gagal memuat data.';
+        _error = (e.response?.data as Map?)?['message'] ?? 'Record Not Found';
       });
     } catch (_) {
       setState(() {
-        _error = 'Terjadi kesalahan. Periksa koneksi.';
+        _error = 'Authentication server unreachable.';
       });
     } finally {
       setState(() {
@@ -50,482 +71,510 @@ class _VerifyPageState extends State<VerifyPage> {
     }
   }
 
+  Future<void> _launchUrl() async {
+    final Uri url = Uri.parse(
+      'https://certipath.alope.id/verify/${widget.serial}',
+    );
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      debugPrint('Could not launch $url');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.ecru,
+      backgroundColor: const Color(0xFF0A0A0A),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(
-          'VERIFIKASI KEASLIAN',
-          style: GoogleFonts.sourceCodePro(fontSize: 11, letterSpacing: 2),
-        ),
+        backgroundColor: Colors.black.withOpacity(_headerOpacity * 0.8),
+        elevation: 0,
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 18,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Opacity(
+          opacity: _headerOpacity,
+          child: Text(
+            'CERTIPATH',
+            style: GoogleFonts.lexend(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 4,
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? _buildLoading()
           : _error != null
           ? _buildError()
-          : _buildResult(),
+          : _buildCertificate(),
     );
   }
-
-  // ── Loading ────────────────────────────────────────────────────────────────
 
   Widget _buildLoading() => Center(
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: 32,
-          height: 32,
+        const SizedBox(
+          width: 40,
+          height: 40,
           child: CircularProgressIndicator(
-            strokeWidth: 1.5,
-            color: AppColors.primary,
+            color: Color(0xFFC0202A),
+            strokeWidth: 2,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         Text(
-          'MEMVERIFIKASI...',
-          style: GoogleFonts.sourceCodePro(
+          'INITIALIZING VERIFICATION',
+          style: GoogleFonts.lexend(
+            color: const Color(0xFFC0202A),
             fontSize: 10,
-            letterSpacing: 3,
-            color: AppColors.primary.withOpacity(0.6),
+            letterSpacing: 4,
           ),
         ),
       ],
     ),
   );
 
-  // ── Error ──────────────────────────────────────────────────────────────────
-
   Widget _buildError() => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.wifi_off_rounded,
-            color: AppColors.primary.withOpacity(0.4),
-            size: 48,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _error ?? '',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(fontSize: 14, color: AppColors.inkLight),
-          ),
-          const SizedBox(height: 20),
-          OutlinedButton(
-            onPressed: _load,
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: AppColors.primary.withOpacity(0.4)),
-              shape: const RoundedRectangleBorder(),
-            ),
-            child: Text(
-              'COBA LAGI',
-              style: GoogleFonts.sourceCodePro(fontSize: 10, letterSpacing: 2),
-            ),
-          ),
-        ],
+    child: Text(
+      _error!,
+      style: GoogleFonts.sourceCodePro(
+        color: const Color(0xFFC0202A),
+        fontSize: 12,
+        letterSpacing: 2,
       ),
     ),
   );
 
-  // ── Result ─────────────────────────────────────────────────────────────────
-
-  Widget _buildResult() {
+  Widget _buildCertificate() {
     final r = _result!;
-    final isAuthentic = r['is_authentic'] as bool? ?? false;
-    final serial = r['serial_number'] as String? ?? widget.serial;
-    final productId = r['product_id'] as String? ?? '-';
-    final merkleRoot = r['db_root_hash'] as String? ?? '';
-    final txHash = r['tx_hash'] as String? ?? '';
-    final verifiedAt = DateTime.now();
+    final isAuth = r['is_authentic'] as bool? ?? false;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(20, kToolbarHeight + 40, 20, 40),
       child: Column(
         children: [
-          // ── Sertifikat ───────────────────────────────────────────────────────
           Container(
-            width: double.infinity,
             decoration: BoxDecoration(
-              color: AppColors.paper,
+              color: const Color(0xFFFAF7F2),
+              borderRadius: BorderRadius.circular(32),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-                BoxShadow(
-                  color: AppColors.ink.withOpacity(0.10),
+                  color: const Color(0xFFC0202A).withOpacity(0.1),
                   blurRadius: 40,
-                  offset: const Offset(0, 16),
+                  spreadRadius: -10,
                 ),
               ],
             ),
+            clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
-                // Top bar
-                _GradientBar(),
-
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 28, 28, 24),
-                  child: Column(
-                    children: [
-                      // Logo
-                      _LogoRow(),
-                      const SizedBox(height: 12),
-
-                      Text(
-                        'REDLINE APPAREL',
-                        style: GoogleFonts.sourceCodePro(
-                          fontSize: 8,
-                          letterSpacing: 5,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'CERTIFICATE',
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 24,
-                          letterSpacing: 4,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'OF AUTHENTICITY',
-                        style: GoogleFonts.sourceCodePro(
-                          fontSize: 7,
-                          letterSpacing: 3,
-                          color: AppColors.inkFaint,
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-                      _Divider(),
-                      const SizedBox(height: 20),
-
-                      // Status banner
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isAuthentic
-                              ? AppColors.primary.withOpacity(0.06)
-                              : Colors.red.shade50,
-                          border: Border.all(
-                            color: isAuthentic
-                                ? AppColors.primary.withOpacity(0.2)
-                                : Colors.red.shade200,
+                Container(
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0xFF8B0000),
+                        Color(0xFFC0202A),
+                        Color(0xFFE8312A),
+                      ],
+                    ),
+                  ),
+                ),
+                Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Center(
+                        child: Text(
+                          'CP',
+                          style: TextStyle(
+                            fontSize: 180,
+                            fontWeight: FontWeight.w900,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.black.withOpacity(0.03),
                           ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              isAuthentic
-                                  ? Icons.verified_outlined
-                                  : Icons.dangerous_outlined,
-                              color: isAuthentic
-                                  ? AppColors.primary
-                                  : Colors.red.shade600,
-                              size: 16,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 40,
+                      ),
+                      child: Column(
+                        children: [
+                          _buildBrandHeader(),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Certificate',
+                            style: GoogleFonts.playfairDisplay(
+                              fontSize: 25,
+                              color: const Color(0xFF1A1A1A),
+                              fontWeight: FontWeight.w300,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              isAuthentic
-                                  ? 'VERIFIED AUTHENTIC'
-                                  : 'NOT AUTHENTIC',
-                              style: GoogleFonts.sourceCodePro(
-                                fontSize: 10,
-                                letterSpacing: 2.5,
-                                color: isAuthentic
-                                    ? AppColors.primary
-                                    : Colors.red.shade600,
-                                fontWeight: FontWeight.w600,
-                              ),
+                          ),
+                          Text(
+                            'of Authenticity',
+                            style: GoogleFonts.playfairDisplay(
+                              fontSize: 25,
+                              fontStyle: FontStyle.italic,
+                              color: const Color(0xFF1A1A1A),
                             ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Body text
-                      Text(
-                        isAuthentic
-                            ? 'Item ini telah diverifikasi dan tercatat secara kriptografis di blockchain sebagai produk asli Redline Apparel.'
-                            : 'Item ini tidak dapat diverifikasi sebagai produk asli Redline Apparel.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          height: 1.8,
-                          color: AppColors.inkLight,
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Detail grid
-                      _DetailGrid(
-                        items: [
-                          ('PRODUCT ID', '#$productId'),
-                          (
-                            'VERIFIED ON',
-                            '${verifiedAt.day}/${verifiedAt.month}/${verifiedAt.year}',
                           ),
-                          (
-                            'MERKLE ROOT',
-                            merkleRoot.isNotEmpty
-                                ? '${merkleRoot.substring(0, 14)}...'
-                                : '-',
+                          const SizedBox(height: 8),
+                          Text(
+                            'SECURE BLOCKCHAIN VERIFICATION',
+                            style: GoogleFonts.lexend(
+                              fontSize: 8,
+                              color: const Color(0xFF1A1A1A).withOpacity(0.4),
+                            ),
                           ),
-                          (
-                            'TX HASH',
-                            txHash.isNotEmpty
-                                ? '${txHash.substring(0, 14)}...'
-                                : '-',
+                          const SizedBox(height: 40),
+                          _buildStatusIndicator(isAuth),
+                          const SizedBox(height: 40),
+                          const Divider(color: Colors.black12),
+                          const SizedBox(height: 32),
+                          _buildDetailRow(
+                            "Serial Number",
+                            r['serial_number'],
+                            isHighlight: true,
                           ),
+                          const SizedBox(height: 20),
+                          _buildDetailRow(
+                            "Product Collection",
+                            "Archive Model #${r['product_id']}",
+                          ),
+                          const SizedBox(height: 20),
+                          _buildDetailRow("Origin", "Kuningan, Indonesia"),
+                          const SizedBox(height: 40),
+                          _buildBlockchainBox(r),
+                          const SizedBox(height: 48),
+                          _buildCertificateFooter(r['serial_number']),
                         ],
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Chain badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 12,
-                        ),
-                        color: AppColors.parchment,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.link,
-                              size: 11,
-                              color: AppColors.primary.withOpacity(0.4),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'SECURED BY ETHEREUM BLOCKCHAIN',
-                              style: GoogleFonts.sourceCodePro(
-                                fontSize: 7,
-                                letterSpacing: 2,
-                                color: AppColors.inkFaint,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-                      _Divider(),
-                      const SizedBox(height: 12),
-
-                      // Cert number
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 24,
+                  ),
+                  color: const Color(0xFF1A1A1A),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       Text(
-                        'CERT-$productId-${serial.substring(0, 8).toUpperCase()} · CERTIPATH',
-                        style: GoogleFonts.sourceCodePro(
+                        '© 2026 REDLINE APPAREL CERTIPATH',
+                        style: GoogleFonts.lexend(
                           fontSize: 7,
-                          letterSpacing: 2,
-                          color: AppColors.inkFaint,
+                          color: Colors.white24,
+                          letterSpacing: 1.5,
                         ),
                       ),
+                      Row(children: [_dot(1.0), _dot(0.5), _dot(0.2)]),
                     ],
                   ),
                 ),
-
-                _GradientBar(),
               ],
             ),
           ),
+          const SizedBox(height: 32),
+          _buildPrintButton(),
+        ],
+      ),
+    );
+  }
 
-          const SizedBox(height: 24),
+  Widget _buildBrandHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 30,
+          height: 1,
+          color: const Color(0xFFC0202A).withOpacity(0.3),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          'REDLINE APPAREL',
+          style: GoogleFonts.lexend(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 4,
+            color: const Color(0xFFC0202A),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Container(
+          width: 30,
+          height: 1,
+          color: const Color(0xFFC0202A).withOpacity(0.3),
+        ),
+      ],
+    );
+  }
 
-          // Tombol kembali
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
-                shape: const RoundedRectangleBorder(),
-                padding: const EdgeInsets.symmetric(vertical: 14),
+  Widget _buildStatusIndicator(bool isAuth) {
+    return Column(
+      children: [
+        Container(
+          width: 70,
+          height: 70,
+          decoration: BoxDecoration(
+            color: isAuth ? const Color(0xFFC0202A) : Colors.black,
+            shape: BoxShape.circle,
+            boxShadow: [
+              if (isAuth)
+                BoxShadow(
+                  color: const Color(0xFFC0202A).withOpacity(0.4),
+                  blurRadius: 20,
+                ),
+            ],
+          ),
+          child: Icon(
+            isAuth ? Icons.check : Icons.close,
+            color: Colors.white,
+            size: 30,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          isAuth ? 'Product Verified' : 'Verification Failed',
+          style: GoogleFonts.lexend(
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF1A1A1A),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          isAuth
+              ? 'This item is a certified genuine masterpiece.'
+              : 'Unable to confirm authenticity.',
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontStyle: FontStyle.italic,
+            color: Colors.black45,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    bool isHighlight = false,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: GoogleFonts.lexend(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: Colors.black26,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.lexend(
+              fontSize: 15,
+              color: isHighlight ? const Color(0xFFC0202A) : Colors.black,
+              fontWeight: isHighlight ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBlockchainBox(Map r) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'CRYPTOGRAPHIC EVIDENCE',
+            style: GoogleFonts.lexend(
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              color: Colors.black26,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _blockchainItem(Icons.hub_outlined, 'Network', 'Ethereum Mainnet'),
+          const SizedBox(height: 12),
+          _blockchainItem(
+            Icons.link,
+            'Transaction',
+            r['tx_hash'],
+            isHash: true,
+          ),
+          const SizedBox(height: 12),
+          _blockchainItem(
+            Icons.shield_outlined,
+            'Root Hash',
+            r['db_root_hash'],
+            isHash: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _blockchainItem(
+    IconData icon,
+    String label,
+    String value, {
+    bool isHash = false,
+  }) {
+    String displayValue = isHash
+        ? "${value.substring(0, 12)}...${value.substring(value.length - 12)}"
+        : value;
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: const Color(0xFFC0202A).withOpacity(0.5)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.lexend(fontSize: 8, color: Colors.black38),
               ),
-              child: Text(
-                'KEMBALI',
+              Text(
+                displayValue,
                 style: GoogleFonts.sourceCodePro(
-                  fontSize: 11,
-                  letterSpacing: 2,
-                  color: AppColors.inkLight,
+                  fontSize: 9,
+                  color: Colors.black54,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
-            ),
+            ],
           ),
-
-          const SizedBox(height: 32),
-        ],
-      ),
+        ),
+      ],
     );
   }
-}
 
-// ── Widgets ───────────────────────────────────────────────────────────────────
-
-class _GradientBar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 5,
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        colors: [
-          Color(0xFF8B0000),
-          Color(0xFFC0202A),
-          Color(0xFFE8312A),
-          Color(0xFFC0202A),
-          Color(0xFF8B0000),
-        ],
-      ),
-    ),
-  );
-}
-
-class _LogoRow extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: Container(
-          height: 1,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.transparent, Color(0x50C0202A)],
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(width: 16),
-      Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColors.primary.withOpacity(0.25)),
-          color: AppColors.primary.withOpacity(0.06),
-        ),
-        child: Center(
-          child: Text(
-            'R',
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 20,
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(width: 16),
-      Expanded(
-        child: Container(
-          height: 1,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0x50C0202A), Colors.transparent],
-            ),
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-class _Divider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: Container(height: 1, color: AppColors.primary.withOpacity(0.15)),
-      ),
-      const SizedBox(width: 12),
-      Column(
-        children: [
-          _Diamond(opacity: 0.2),
-          const SizedBox(height: 3),
-          _Diamond(opacity: 0.5),
-          const SizedBox(height: 3),
-          _Diamond(opacity: 0.2),
-        ],
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Container(height: 1, color: AppColors.primary.withOpacity(0.15)),
-      ),
-    ],
-  );
-}
-
-class _Diamond extends StatelessWidget {
-  const _Diamond({required this.opacity});
-  final double opacity;
-  @override
-  Widget build(BuildContext context) => Transform.rotate(
-    angle: 0.785,
-    child: Container(
-      width: 5,
-      height: 5,
-      color: AppColors.primary.withOpacity(opacity),
-    ),
-  );
-}
-
-class _DetailGrid extends StatelessWidget {
-  const _DetailGrid({required this.items});
-  final List<(String, String)> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      childAspectRatio: 2.8,
-      children: items
-          .map(
-            (item) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              color: AppColors.parchment,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.$1,
-                    style: GoogleFonts.sourceCodePro(
-                      fontSize: 7,
-                      letterSpacing: 1.5,
-                      color: AppColors.primary.withOpacity(0.6),
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    item.$2,
-                    style: GoogleFonts.sourceCodePro(
-                      fontSize: 10,
-                      color: AppColors.ink,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+  Widget _buildCertificateFooter(String serial) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Redline Apparel',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 20,
+                fontStyle: FontStyle.italic,
+                color: Colors.black87,
               ),
             ),
-          )
-          .toList(),
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              width: 120,
+              height: 1,
+              color: Colors.black12,
+            ),
+            Text(
+              'OFFICIAL REPRESENTATIVE',
+              style: GoogleFonts.lexend(
+                fontSize: 7,
+                letterSpacing: 2,
+                color: Colors.black26,
+              ),
+            ),
+          ],
+        ),
+        Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.black.withOpacity(0.05)),
+              ),
+              child: const Icon(
+                Icons.qr_code,
+                size: 50,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'UNIQUE ID',
+              style: GoogleFonts.lexend(fontSize: 7, color: Colors.black26),
+            ),
+          ],
+        ),
+      ],
     );
   }
+
+  Widget _buildPrintButton() {
+    return InkWell(
+      onTap: _launchUrl,
+      borderRadius: BorderRadius.circular(100),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.print_outlined, color: Colors.white, size: 18),
+            const SizedBox(width: 12),
+            Text(
+              'PRINT ARCHIVAL COPY',
+              style: GoogleFonts.lexend(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dot(double opacity) => Container(
+    margin: const EdgeInsets.only(left: 4),
+    width: 4,
+    height: 4,
+    decoration: BoxDecoration(
+      color: const Color(0xFFC0202A).withOpacity(opacity),
+      shape: BoxShape.circle,
+    ),
+  );
 }
