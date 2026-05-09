@@ -83,7 +83,6 @@ class _HomeProfileCardState extends State<HomeProfileCard> {
                       ],
                     ),
 
-                    // ✅ UPDATE CIRCLE AVATAR
                     CircleAvatar(
                       radius: 25,
                       backgroundColor: Colors.white24,
@@ -161,7 +160,7 @@ class _HomeProfileCardState extends State<HomeProfileCard> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 14),
+          // const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 14),
         ],
       ),
     );
