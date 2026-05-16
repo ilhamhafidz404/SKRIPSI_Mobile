@@ -2,6 +2,7 @@ class Product {
   final int id;
   final String name;
   final String code;
+  final String description;
   final int price;
   final int stock;
   final String image;
@@ -12,6 +13,7 @@ class Product {
     required this.id,
     required this.name,
     required this.code,
+    required this.description,
     required this.price,
     required this.stock,
     required this.image,
@@ -24,6 +26,7 @@ class Product {
       id: json['id'],
       name: json['name'],
       code: json['code'],
+      description: json['description'],
       price: json['price'],
       stock: json['stock'],
       image: json['image'] ?? '',

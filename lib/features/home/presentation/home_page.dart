@@ -39,6 +39,7 @@ class _HomePageState extends ConsumerState<HomePage>
     super.initState();
     _bannerController = PageController();
     _scrollController = ScrollController();
+    // _heroController = HeroController();
 
     _setupScrollListener();
     _startBannerAutoScroll();

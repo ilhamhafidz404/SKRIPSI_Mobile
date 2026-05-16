@@ -1,6 +1,7 @@
 import 'package:certipath_app/features/home/data/models/product_model.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Import package intl
+import 'package:intl/intl.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import '../../../../core/theme.dart';
 
 class ProductDetailPage extends StatelessWidget {
@@ -84,9 +85,17 @@ class ProductDetailPage extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    "Implementasi deskripsi produk dan detail lainnya akan muncul di sini.",
-                    style: TextStyle(fontSize: 16, color: Colors.black87),
+                  // Text(
+                  //   product.description,
+                  //   style: TextStyle(fontSize: 16, color: Colors.black87),
+                  // ),
+                  HtmlWidget(
+                    product.description ?? "Product doesn't have description",
+                    textStyle: TextStyle(fontSize: 16, color: Colors.black87),
+                    onTapUrl: (url) {
+                      print("Membuka link: $url");
+                      return true;
+                    },
                   ),
                 ],
               ),
