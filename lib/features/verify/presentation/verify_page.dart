@@ -257,7 +257,17 @@ class _VerifyPageState extends State<VerifyPage> {
                           _buildDetailRow("Origin", "Kuningan, Indonesia"),
                           const SizedBox(height: 40),
                           _buildBlockchainBox(r),
+
+                          const SizedBox(height: 24),
+
+                          _buildOwnershipCard(r),
+
+                          const SizedBox(height: 24),
+
+                          _buildOwnershipHistory(r),
+
                           const SizedBox(height: 48),
+
                           _buildCertificateFooter(r['serial_number']),
                         ],
                       ),
@@ -477,6 +487,145 @@ class _VerifyPageState extends State<VerifyPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildOwnershipCard(Map r) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFC0202A).withOpacity(.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFC0202A).withOpacity(.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'CURRENT OWNERSHIP',
+            style: GoogleFonts.lexend(
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              color: Colors.black26,
+              letterSpacing: 2,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          Text(
+            r['ownership_label'] ?? 'Unclaimed',
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 24,
+              fontStyle: FontStyle.italic,
+              color: const Color(0xFFC0202A),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            'Ownership Sequence #${r['ownership_sequence'] ?? 0}',
+            style: GoogleFonts.lexend(fontSize: 12, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOwnershipHistory(Map r) {
+    final history = (r['ownership_history'] as List?) ?? [];
+
+    if (history.isEmpty) {
+      return const SizedBox();
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(.03),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'OWNERSHIP HISTORY',
+            style: GoogleFonts.lexend(
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              color: Colors.black26,
+              letterSpacing: 2,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          ...history.map((e) {
+            final seq = e['ownership_sequence'];
+
+            final owner = e['to_user']?['name'] ?? 'Unknown Owner';
+
+            final method = e['transfer_method'] ?? '-';
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFC0202A),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$seq',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          owner,
+                          style: GoogleFonts.lexend(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        Text(
+                          method,
+                          style: GoogleFonts.sourceCodePro(
+                            fontSize: 10,
+                            color: Colors.black45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ],
+      ),
     );
   }
 

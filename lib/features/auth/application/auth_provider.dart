@@ -2,6 +2,7 @@ import 'package:certipath_app/core/api_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:certipath_app/core/key_service.dart';
 
 // ── Model ─────────────────────────────────────────────────────────────────────
 
@@ -116,6 +117,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final token = response['token'] as String;
       await _api.saveToken(token);
 
+      // Tambah ini
+      final keyService = KeyService();
+
+      // Generate key pair jika belum ada
+      if (!await keyService.hasKeyPair()) {
+        final keyPair = await keyService.generateAndSaveKeyPair();
+
+        // Kirim public key ke server
+        await _api.client.post(
+          '/auth/save-public-key',
+          data: {
+            'public_key_x': keyPair.publicKeyX,
+            'public_key_y': keyPair.publicKeyY,
+          },
+        );
+      }
+
       final user = AuthUser.fromJson(
         response['user'] as Map<String, dynamic>,
         token,
@@ -138,6 +156,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> signOut() async {
     await _googleSignIn.signOut();
     await _api.clearToken();
+    await KeyService().clearKeyPair();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 }

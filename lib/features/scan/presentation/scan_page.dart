@@ -7,6 +7,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
 import 'package:certipath_app/core/api_service.dart';
+import 'package:certipath_app/core/key_service.dart';
 
 class ScanQrPage extends StatefulWidget {
   const ScanQrPage({super.key});
@@ -129,11 +130,22 @@ class _ScanQrPageState extends State<ScanQrPage>
     );
 
     try {
-      final res = await _dio.post('/claim/$claimToken');
+      // Sign claim_token dengan private key user
+      final keyService = KeyService();
+      final signature = await keyService.sign(claimToken);
+
+      // Kirim ke server beserta signature
+      final res = await _dio.post(
+        '/claim/$claimToken',
+        data: {
+          'signature_r': signature.signatureR,
+          'signature_s': signature.signatureS,
+        },
+      );
+
       if (!mounted) return;
       Navigator.pop(context);
 
-      // Pastikan data adalah Map sebelum diparse
       final data = (res.data is Map<String, dynamic>)
           ? res.data as Map<String, dynamic>
           : <String, dynamic>{};
@@ -143,18 +155,16 @@ class _ScanQrPageState extends State<ScanQrPage>
       if (!mounted) return;
       Navigator.pop(context);
 
-      // Ambil pesan error dengan aman
       String msg = 'Gagal mengklaim item.';
       final responseData = e.response?.data;
       if (responseData is Map) {
         msg = responseData['message']?.toString() ?? msg;
       }
-
       _showErrorSheet(msg);
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);
-      _showErrorSheet('Terjadi kesalahan. Silakan coba lagi.');
+      _showErrorSheet('Terjadi kesalahan: ${e.toString()}');
     }
   }
 
